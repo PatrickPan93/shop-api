@@ -10,6 +10,8 @@ func InitBaseRouter(Router *gin.RouterGroup) {
 	baseRouter := Router.Group("base")
 	{
 		baseRouter.GET("captcha", api.GetCaptcha)
+		baseRouter.POST("sms", api.SendSms)
+		baseRouter.POST("register", api.Register)
 	}
 
 }

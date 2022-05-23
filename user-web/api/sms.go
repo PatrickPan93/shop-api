@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"go.uber.org/zap"
 	"math/rand"
 	"net/http"
 	"shop-api/user-web/forms"
@@ -39,8 +40,9 @@ func SendSms(ctx *gin.Context) {
 
 	client, err := dysmsapi.NewClientWithAccessKey("cn-beijing", global.ServerConfig.AliSmsInfo.ApiKey, global.ServerConfig.AliSmsInfo.ApiSecret)
 	if err != nil {
-		panic(err)
+		zap.S().Errorw("Failed to send SMS", "error", err)
 	}
+
 	smsCode := GenerateSmsCode(6)
 	request := requests.NewCommonRequest()
 	request.Method = "POST"
