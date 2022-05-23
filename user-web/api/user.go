@@ -3,6 +3,7 @@ package api
 import (
 	"context"
 	"fmt"
+	"github.com/dgrijalva/jwt-go"
 	"github.com/gin-gonic/gin"
 	"github.com/go-playground/validator/v10"
 	"go.uber.org/zap"
@@ -14,6 +15,8 @@ import (
 	"shop-api/user-web/forms"
 	"shop-api/user-web/global"
 	"shop-api/user-web/global/response"
+	"shop-api/user-web/middlewares"
+	"shop-api/user-web/models"
 	"shop-api/user-web/proto"
 	"strconv"
 	"strings"
@@ -130,6 +133,7 @@ func GetUserList(c *gin.Context) {
 func PassWordLogin(c *gin.Context) {
 	var (
 		err              error
+		token            string
 		userConn         *grpc.ClientConn
 		options          []grpc.DialOption
 		userInfoRsp      *proto.UserInfoResponse
@@ -155,6 +159,7 @@ func PassWordLogin(c *gin.Context) {
 		HandleGrpcErrorToHttp(err, c)
 		return
 	}
+
 	userSrvClient := proto.NewUserClient(userConn)
 
 	// 业务逻辑
@@ -190,8 +195,34 @@ func PassWordLogin(c *gin.Context) {
 		} else {
 			// RPC调用成功查看验证结果, 成功则登陆成功
 			if checkPasswordRsp.Success {
+				// 生成token返回给用户
+				j := middlewares.NewJWT()
+				claims := models.CustomClaims{
+					ID:          uint(userInfoRsp.Id),
+					NickName:    userInfoRsp.NickName,
+					AuthorityId: uint(userInfoRsp.Role),
+					StandardClaims: jwt.StandardClaims{
+						// 签名的生效时间
+						NotBefore: time.Now().Unix(),
+						// 过期时间 60s * 60m * 24 * 30 = 30天过期
+						ExpiresAt: time.Now().Unix() + 60*60*24*30,
+						// 颁发者
+						Issuer: "user_srv",
+					},
+				}
+				// 生成token失败返回
+				if token, err = j.CreateToken(claims); err != nil {
+					c.JSON(http.StatusInternalServerError, gin.H{
+						"msg": "生成token失败",
+					})
+					return
+				}
+				// 返回用户信息 + token
 				c.JSON(http.StatusOK, gin.H{
-					"msg": "登陆成功",
+					"id":        userInfoRsp.Id,
+					"name":      userInfoRsp.NickName,
+					"token":     token,
+					"expire_at": (time.Now().Unix() + 60*60*24*30) * 1000,
 				})
 				return
 			} else {
