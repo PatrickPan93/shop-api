@@ -148,6 +148,14 @@ func PassWordLogin(c *gin.Context) {
 		handleValidatorErr(c, err)
 		return
 	}
+	// 验证验证码是否准确
+	if !store.Verify(passwordLoginForm.CaptchaId, passwordLoginForm.Captcha, true) {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"captcha": "验证码错误",
+		})
+		return
+	}
+
 	// 基于连接生成grpc client并调用API
 	options = append(options, grpc.WithTransportCredentials(insecure.NewCredentials()))
 

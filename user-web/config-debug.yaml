@@ -6,3 +6,10 @@ user_srv:
   port: 8088
 jwt:
   key: 'tH2#lA1!dO5!dB8)bD5!bQ1:eG3*cC1%'
+sms:
+  key:
+  secret:
+redis:
+  host: '127.0.0.1'
+  port: '6379'
+  expire:
