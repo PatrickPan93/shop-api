@@ -2,6 +2,7 @@ package initialize
 
 import (
 	"github.com/gin-gonic/gin"
+	"net/http"
 	"shop-api/user-web/middlewares"
 	router2 "shop-api/user-web/router"
 )
@@ -17,5 +18,10 @@ func Routers() *gin.Engine {
 	// 基础路由
 	router2.InitBaseRouter(ApiGroup)
 
+	router.GET("/health", health)
 	return router
+}
+
+func health(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{})
 }
